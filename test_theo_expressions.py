@@ -9,12 +9,12 @@ import matplotlib.pyplot as plt
 
 alpha = 0.5
 k0 = 1
-Ka1R = 10000
-Ka2R = 100
-Ka3R = 0
-Ka1O = 100
-Ka2O = 2
-Ka3O = 0
+Ka1R = 100000
+Ka2R = 1000
+Ka3R = 1
+Ka1O = 1000
+Ka2O = 10
+Ka3O = 1
 
 KaRs = [1, Ka1R, Ka2R, Ka3R]
 KaOs = [1, Ka1O, Ka2O, Ka3O]
@@ -59,11 +59,14 @@ plt.plot(np.log10(c), k0apps[1],  label = "Path 2")
 #plt.plot(np.log10(c), k0appsc[0]*3,  label = "1c scaled")
 
 plt.plot(np.log10(c), k0apps[2],  label = "Path 3")
+plt.plot(np.log10(c), k0apps[3],  label = "Path 4")
+
 plt.plot(np.log10(c), k0appsc[0],  label = "Path 1c")
 plt.plot(np.log10(c), k0appsc[1],  label = "Path 2c")
+plt.plot(np.log10(c), k0appsc[2],  label = "Path 3c")
 
-#plt.plot(np.log10(c),k0apps[0]+k0apps[1]+k0apps[2]+k0appsc[0]+k0appsc[1], label = "sum all")
-#plt.plot(np.log10(c),k0apps[0]+k0apps[1]+k0apps[2], label = "sum stepwise")
+#plt.plot(np.log10(c),k0apps[0]+k0apps[1]+k0apps[2]+ k0apps[3]+k0appsc[0]+k0appsc[1]+k0appsc[2], label = "sum all")
+#plt.plot(np.log10(c),k0apps[0]+k0apps[1]+k0apps[2]+ k0apps[3], label = "sum stepwise")
 plt.legend(fontsize = 12)
 plt.ylabel(("$k^{0}_{i,app}/k^{0}_{i}$"), fontsize = 14)
 plt.xlabel ("log[Li$^{+}$]", fontsize = 14)
