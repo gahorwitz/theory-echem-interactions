@@ -14,11 +14,11 @@ import scipy.optimize
 
 from datetime import datetime
 
-from autograd import numpy as np
-from autograd import elementwise_grad, value_and_grad, hessian
-from scipy.optimize import minimize
+# from autograd import numpy as np
+# from autograd import elementwise_grad, value_and_grad, hessian
+# from scipy.optimize import minimize
 
-print ("Test")
+print ("Test branch")
 def E_app(c, E0, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O):
     return E0+R*T/F*np.log((1+Ka1R*c+Ka1R*Ka2R*c**2+Ka1R*Ka2R*Ka3R*c**3)/(1+Ka1O*c+Ka1O*Ka2O*c**2+Ka1O*Ka2O*Ka3O*c**3))
 
@@ -33,14 +33,20 @@ def k2_theo(c, k2, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O):
 
 def k1_theo(c, k1, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O):
     return k1*(((1+Ka1R*c+Ka1R*Ka2R*c**2+Ka1R*Ka2R*Ka3R*c**3))**-alpha*((1+Ka1O*c+Ka1O*Ka2O*c**2+Ka1O*Ka2O*Ka3O*c**3))**(alpha-1))
+
+def k3_theo(c, k3, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O):
+    return k3*(((1+Ka1R*c+Ka1R*Ka2R*c**2+Ka1R*Ka2R*Ka3R*c**3)/Ka1R/Ka2R)**-alpha*((1+Ka1O*c+Ka1O*Ka2O*c**2+Ka1O*Ka2O*Ka3O*c**3)/Ka1O/Ka2O)**(alpha-1)*c**2)
+
     
 def loss(x0,df):
     value = 0
     #E0, k1,k2,k5, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O = x0 
-    #E0, k2,k5 , Ka1R, Ka2R, Ka3R, Ka1O = x0 
+  #  E0, k2,k5 , Ka1R, Ka2R, Ka3R, Ka1O = x0 
+    #E0, k5 , Ka1R, Ka2R, Ka3R, Ka1O = x0 
+    E0, k6 , k3,  Ka1R, Ka2R, Ka3R, Ka1O, Ka2O = x0 
   #  E0, k1, k2, k5, k6, Ka1R, Ka2R, Ka3R, Ka1O = x0 
    # E0, k1, k2, k5, k6, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O = x0
-    E0, k1, k2, k5, k6, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O = x0
+   # E0, k1, k2, k5, k6, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O = x0
    # k1, k2, k5, k6= x0 
     # Ka2O = 0
     # Ka3O = 0
@@ -89,7 +95,8 @@ def loss(x0,df):
     k_fit  = (k5_theo(df["c_LiTFSI (M)"],k5, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O)
               +k2_theo(df["c_LiTFSI (M)"], k2, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O)
                   +k6_theo( df["c_LiTFSI (M)"], k6, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O)
-                      +k1_theo( df["c_LiTFSI (M)"], k1, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O))
+                      +k1_theo( df["c_LiTFSI (M)"], k1, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O)
+                          +k3_theo( df["c_LiTFSI (M)"], k3, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O))
     #value = value + np.sum(np.abs((E_fit-df["E0"])/df["E0"])+((np.abs(k_fit-df["ks"]))*5))
     value_k = np.sum(np.abs((k_fit-df["ks"]))**2*10)
     value_E = np.sum(np.abs((E_fit-df["E0"])/df["E0"])**2)
@@ -104,8 +111,9 @@ def takestep(x):
     """ This function determines how the parameters will be adjusted at each 
     basinhopping optimiser step. It allows us to specify different step sizes 
     for each of the three parameters."""
-    stepsize=[0.01,0.01,0.01,0.01,0.01, 1,1,1,1,1,1]   # Maximum amount to step in one go.
+   # stepsize=[0.01,0.01,0.01,0.01,0.01, 1,1,1,1,1,1]   # Maximum amount to step in one go.
   #  stepsize=[0.001,0.01,0.01,0.001]   # Maximum amount to step in one go.
+    stepsize=[0.01,0.01, 10,10,10,10,10,10]   # Maximum amount to step in one go.
     dx = [np.random.uniform(low=-stepsize[i],high=stepsize[i]) for i in range(len(x0))]
     return x+dx
 
@@ -123,26 +131,31 @@ def main():
     c= np.exp(c)
   #  loss(df, E0, k1,k2,k5, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O)
     bnds = ((-0.6,-0.5), (0, None), (0,None), (0,None), (0,None), (0,None), (0,None))
-    LA = scipy.optimize.basinhopping(loss, x0,  T=0.1, niter= 0, take_step=takestep,
+    LA = scipy.optimize.basinhopping(loss, x0,  T=0.1, niter= 100, take_step=takestep,
                                        minimizer_kwargs= {"args":(df), "method":"Nelder-Mead",
                                        "bounds":bnds})
     
   #  E0, k1, k2, k5, k6 ,Ka1R, Ka2R, Ka3R, Ka1O = LA.x
   #  E0, k1, k2, k5, k6 ,Ka1R, Ka2R, Ka3R, Ka1O, Ka2O = LA.x
-    E0, k1, k2, k5, k6 ,Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O = LA.x
+  #  E0, k1, k2, k5, k6 ,Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O = LA.x
   #  k1, k2, k5, k6 = LA.x
+   # E0, k2,k5 , Ka1R, Ka2R, Ka3R, Ka1O = LA.x
+   # E0, k5 , Ka1R, Ka2R, Ka3R, Ka1O = LA.x
+    E0, k6 , k3, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O = LA.x
   #  k1 = 2.230405e-09
   #  k2 = 6.064541e-02
   #  k5 = 5.671643e-03
   #  k6 = 1.870149e-03
     
-    print(LA)
+#    print(LA)
     LA_df = pd.DataFrame(LA.x)
     LA_df = pd.DataFrame.transpose(LA_df)
-  #  LA_df.columns = ["E0", "k2","k5" , "Ka1R", "Ka2R", "Ka3R", "Ka1O"]
+    #LA_df.columns = ["E0", "k2","k5" , "Ka1R", "Ka2R", "Ka3R", "Ka1O"]
+  #  LA_df.columns = ["E0", "k5" , "Ka1R", "Ka2R", "Ka3R", "Ka1O"]
+    LA_df.columns = ["E0", "k6" , "k3", "Ka1R", "Ka2R", "Ka3R", "Ka1O", "Ka2O"]
   #  LA_df.columns = ["E0", "k1", "k2","k5","k6", "Ka1R", "Ka2R", "Ka3R", "Ka1O"]
   #  LA_df.columns = ["E0", "k1", "k2","k5","k6", "Ka1R", "Ka2R", "Ka3R", "Ka1O", "Ka2O"]
-    LA_df.columns = ["E0", "k1", "k2","k5","k6", "Ka1R", "Ka2R", "Ka3R", "Ka1O", "Ka2O", "Ka3O"]
+  #  LA_df.columns = ["E0", "k1", "k2","k5","k6", "Ka1R", "Ka2R", "Ka3R", "Ka1O", "Ka2O", "Ka3O"]
  #   LA_df.columns = ["k1", "k2","k5","k6"]
     LA_df = pd.DataFrame.transpose(LA_df)
     
@@ -163,7 +176,8 @@ def main():
     ax[1].plot(np.log(c), k5_theo(c, k5, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O)
         +k2_theo(c, k2, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O)
            +k6_theo(c, k6, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O)
-               +k1_theo(c, k1, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O))
+               +k1_theo(c, k1, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O)
+                   +k3_theo(c, k3, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O))
     ax[1].set_ylabel(("k$^{0}_{app}$"), fontsize = 16)
     ax[1].set_xlabel ("log[Li$^{+}$]", fontsize = 16)
     ax[1].tick_params(axis='both', which='major', labelsize=15)
@@ -172,6 +186,7 @@ def main():
     ax[2].plot(np.log(c), k2_theo(c, k2, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O), label = "k2")
     ax[2].plot(np.log(c), k5_theo(c, k5, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O), label = "k5")
     ax[2].plot(np.log(c), k6_theo(c, k6, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O), label = "k6")
+    ax[2].plot(np.log(c), k3_theo(c, k3, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O), label = "k3")
     ax[2].legend()
     fig.tight_layout()    
    # k2 = np.array(np.linspace(0.001,0.05,10))
@@ -210,22 +225,25 @@ if __name__ == "__main__":
     
     #### Initial guesses of parameters
     E0   = -0.555084
-    k1   = 0.0001
-    k2   = 0.05
-    k5   = 0.05
-    k6   = 0.00001
-    Ka1R = 4
-    Ka2R = 4
-    Ka3R = 4
-    Ka1O = 2
-    Ka2O = 0.01
-    Ka3O = 0.01
+    k1   = 0
+    k2   = 0
+    k5   = 0
+    k6   = 0.1
+    k3   = 0.1
+    Ka1R = 100
+    Ka2R = 10
+    Ka3R = 10
+    Ka1O = 1
+    Ka2O = 1
+    Ka3O = 0
    
    # x0 = [E0, k1,k2,k5, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O]
    # x0 = [E0, k2,k5, Ka1R, Ka2R, Ka3R, Ka1O]
+   # x0 = [E0, k5, Ka1R, Ka2R, Ka3R, Ka1O]
+    x0 = [E0, k6, k3, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O]
    # x0 = [E0, k1, k2, k5, k6, Ka1R, Ka2R, Ka3R, Ka1O]
   #  x0 = [E0, k1, k2, k5, k6, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O] 
-    x0 = [E0, k1, k2, k5, k6, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O] 
+  #  x0 = [E0, k1, k2, k5, k6, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O] 
  #   x0 = [k1, k2, k5, k6]
     #Call main program
     main()
