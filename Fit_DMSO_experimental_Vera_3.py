@@ -18,7 +18,7 @@ from autograd import numpy as np
 from autograd import elementwise_grad, value_and_grad, hessian
 from scipy.optimize import minimize
 
-
+print ("Test")
 def E_app(c, E0, Ka1R, Ka2R, Ka3R, Ka1O, Ka2O, Ka3O):
     return E0+R*T/F*np.log((1+Ka1R*c+Ka1R*Ka2R*c**2+Ka1R*Ka2R*Ka3R*c**3)/(1+Ka1O*c+Ka1O*Ka2O*c**2+Ka1O*Ka2O*Ka3O*c**3))
 
